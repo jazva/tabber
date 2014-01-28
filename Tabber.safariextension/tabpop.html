@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script>
+
+        safari.application.addEventListener("popover", popoverHandler, true);
+        window.addEventListener("keydown", fireOnKeyDownz, false);
+        window.addEventListener("keyup", fireOnKeyUpz, false);
+
+        var _tabber_i = 1;
+
+        function fireOnKeyDownz() {
+
+            const s = safari.self.tab;
+            const e = event;
+
+            if (e.ctrlKey && e.keyCode == "192") {
+                _tabber_i++;
+                if (safari.application.activeBrowserWindow.tabs.length <= _tabber_i) {
+                    _tabber_i = 0;
+                }
+                selectCurrentTabItem(_tabber_i);
+                event.preventDefault();
+            }
+        }
+
+        function fireOnKeyUpz() {
+
+            const s = safari.self.tab;
+            const e = event;
+
+            if (e.keyCode == "17" && _tabber_i >= 0) {
+                showTab(_tabber_i);
+                event.preventDefault();
+            }
+        }
+
+        function popoverHandler(event) {
+            //safari.extension.globalPage.contentWindow.console.log("popoverhander  ");
+
+            var tabcontent = document.getElementById("tabs");
+            tabcontent.innerHTML = "";
+            var tabList = safari.extension.globalPage.contentWindow.tabList;
+
+            if (!tabList.length) {
+                return;
+            }
+            var ind = event.message;
+
+            var i = 0;
+            for (var j = 0; j < tabList.length; ++j) {
+                const tab = tabList[j];
+                if (tab.browserWindow === safari.application.activeBrowserWindow) {
+                    //safari.extension.globalPage.contentWindow.console.log("adding li  " + tab.title + " as " + i);
+
+                    var tabli = document.createElement("a");
+                    var titl = tab.title;
+                    if (titl.length > 30) {
+                        titl = titl.substr(0, 27) + "...";
+                    }
+                    tabli.innerText = titl;
+                    tabli.id = i;
+                    tabli.title = tab.title;
+                    tabli.href = "#";
+                    tabli.setAttribute("onclick", "showTab(" + i + ");return false;");
+                    tabli.setAttribute("onmouseover", "selectCurrentTabItem(" + i + ");_tabber_i=" + i + ";");
+                    tabcontent.appendChild(tabli);
+                    i++;
+
+                }
+            }
+            safari.extension.popovers[0].height = tabcontent.offsetHeight;
+            selectCurrentTabItem(_tabber_i);
+        }
+
+        function showTab(num) {
+            safari.extension.popovers[0].hide();
+            safari.extension.globalPage.contentWindow.showTab(num);
+            _tabber_i = 1;
+        }
+
+
+        function selectCurrentTabItem(ind) {
+            //safari.extension.globalPage.contentWindow.console.log("mousovering ind " + ind);
+
+            var tabList = safari.extension.globalPage.contentWindow.tabList;
+            if (!tabList.length) {
+                return;
+            }
+
+            for (var i = 0; i < tabList.length; ++i) {
+                if (document.getElementById(i) != null) {
+                    document.getElementById(i).className = null;
+                }
+            }
+            var tabcont = document.getElementById(ind);
+            tabcont.className = "tabselctd";
+        }
+    </script>
+    <style>
+
+        div.tabs {
+            padding: 2px;
+            margin: 0;
+        }
+
+        div#tabs a:link {
+            font-family: Verdana, Tahoma, Arial, sans-serif;
+            font-size: 11px;
+            padding: 5px;
+            /*width: 100%;*/
+            display: block;
+            text-decoration: none;
+            color: #111111;
+            border-bottom: 1px solid #dedede;
+        }
+
+        div#tabs a.tabselctd, div#tabs a:link.tabselctd {
+            background: #707070;
+            color: #ffffff;
+        }
+    </style>
+
+</head>
+<body style="padding:0;margin: 0;">
+<div id="tabs"></div>
+</body>
+</html>

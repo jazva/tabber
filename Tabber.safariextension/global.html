@@ -1,0 +1,117 @@
+<!DOCTYPE HTML>
+<script>
+    var tabList = [];
+
+    safari.application.addEventListener("open", openHandler, true);
+    safari.application.addEventListener("close", closeHandler, true);
+    safari.application.addEventListener("activate", activateHandler, true);
+    safari.application.addEventListener("message", handleInjectedMessage, true);
+
+    loadExistingTabs(safari.application.activeBrowserWindow);
+
+    function loadExistingTabs(win) {
+        //console.log("loadExistingTabs");
+
+        var currentTabs = win.tabs;
+        for (var i = 0; currentTabs != null && i < currentTabs.length; ++i) {
+            var currentTab = currentTabs[i];
+            if (currentTab != null) {
+                var index = tabList.indexOf(currentTab);
+                if (index === -1) {
+                    tabList.push(currentTab);
+                    //console.log("adding " + currentTab.title + " as " + tabList.length);
+                }
+            }
+
+        }
+        moveToTopTab(safari.application.activeBrowserWindow.activeTab);
+    }
+
+
+    function handleInjectedMessage(event) {
+//        //console.log("HAndling event from injected tab  ");
+
+        if (event.target.browserWindow != safari.application.activeBrowserWindow) {
+            return;
+        }
+
+        if (event.name === "gonexttab") {
+            var ind = event.message;
+            event.message = -1;
+            showTab(ind);
+
+        }
+        if (event.name === "navigating") {
+//            //console.log("navigating " + safari.extension.toolbarItems.length);
+
+            for (var i = 0; i < safari.extension.toolbarItems.length; ++i) {
+                var win = safari.extension.toolbarItems[i];
+
+                if (win.browserWindow == safari.application.activeBrowserWindow) {
+                    win.showPopover();
+                    break;
+                }
+            }
+        }
+    }
+
+
+    function showTab(ind) {
+//        //console.log("showTab " + ind + " total tabs " + tabList.length);
+
+        if (ind >= 0 && tabList.length > ind) {
+            for (var i = 0; i < tabList.length; ++i) {
+                if (tabList[i].browserWindow == safari.application.activeBrowserWindow) {
+                    if (ind == 0) {
+
+                        tabList[i].activate();
+                        return;
+                    }
+                    ind--;
+                }
+            }
+        }
+
+    }
+
+
+    function openHandler(event) {
+        //console.log("opanHandler");
+
+        if (event.target instanceof SafariBrowserTab)
+        //console.log("tab open");
+            tabList.push(event.target);
+        if (event.target instanceof SafariBrowserWindow) {
+            //console.log("window open");
+            loadExistingTabs(event.target);
+        }
+    }
+
+    function removeTabFromList(tab) {
+        var index = tabList.indexOf(tab);
+        if (index === -1)
+            return;
+        tabList.splice(index, 1);
+    }
+
+    function moveToTopTab(tab) {
+        var index = tabList.indexOf(tab);
+        if (index === -1)
+            return;
+        tabList.splice(index, 1);
+        tabList.unshift(tab);
+    }
+
+    function closeHandler(event) {
+        if (event.target instanceof SafariBrowserTab)
+            removeTabFromList(event.target);
+    }
+
+    function activateHandler(event) {
+        if (event.target instanceof SafariBrowserTab) {
+            moveToTopTab(event.target);
+        }
+    }
+
+
+</script>
